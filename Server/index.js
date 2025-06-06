@@ -40,6 +40,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Import routes
 const authRoutes = require('./Routes/authRoutes');
+const taskRoutes = require('./Routes/taskRoutes');
 
 // Basic route
 app.get('/', (req, res) => {
@@ -50,7 +51,7 @@ app.get('/', (req, res) => {
       version: '1.0.0',
       endpoints: {
         auth: '/api/auth',
-        tasks: '/api/tasks (coming soon)'
+        tasks: '/api/tasks'
       }
     }
   });
@@ -58,6 +59,7 @@ app.get('/', (req, res) => {
 
 // Mount routes
 app.use('/api/auth', authRoutes);
+app.use('/api/tasks', taskRoutes);
 
 // Global error handler (must be last)
 app.use(errorHandler);
