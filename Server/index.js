@@ -1,10 +1,8 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const helmet = require('helmet');
-const cors = require('cors');
-const rateLimit = require('express-rate-limit');
 const connectDB = require('./Config/DB');
 const errorHandler = require('./Middleware/errorHandler');
+const { securityStack } = require('./Middleware/securityMiddleware');
 
 // Load environment variables
 dotenv.config();
@@ -17,41 +15,74 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
-// Security middleware
-app.use(helmet()); // Set security headers
-app.use(cors()); // Enable CORS
+// Trust proxy (important for accurate IP addresses behind proxies)
+app.set('trust proxy', 1);
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
-  message: {
-    success: false,
-    message: 'Too many requests from this IP, please try again later.',
-    statusCode: 429
-  }
-});
-
-app.use(limiter);
+// Apply security middleware stack
+app.use(securityStack);
 
 // Middleware to parse JSON
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({
+  limit: process.env.JSON_LIMIT || '10mb',
+  strict: true
+}));
+app.use(express.urlencoded({
+  extended: true,
+  limit: process.env.URL_ENCODED_LIMIT || '10mb'
+}));
 
 // Import routes
 const authRoutes = require('./Routes/authRoutes');
 const taskRoutes = require('./Routes/taskRoutes');
 
-// Basic route
+// Health check route
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Task Manager API is running...',
     data: {
       version: '1.0.0',
+      timestamp: new Date().toISOString(),
       endpoints: {
         auth: '/api/auth',
         tasks: '/api/tasks'
+      },
+    }
+  });
+});
+
+// API documentation route
+app.get('/api', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Task Manager API Documentation',
+    data: {
+      version: '1.0.0',
+      baseUrl: `${req.protocol}://${req.get('host')}`,
+      endpoints: {
+        auth: {
+          register: 'POST /api/auth/register',
+          login: 'POST /api/auth/login',
+          logout: 'POST /api/auth/logout',
+          profile: 'GET /api/auth/me',
+          updateProfile: 'PUT /api/auth/profile',
+          changePassword: 'PUT /api/auth/password'
+        },
+        tasks: {
+          getAllTasks: 'GET /api/tasks',
+          createTask: 'POST /api/tasks',
+          getTask: 'GET /api/tasks/:id',
+          updateTask: 'PUT /api/tasks/:id',
+          deleteTask: 'DELETE /api/tasks/:id',
+          getStats: 'GET /api/tasks/stats',
+          bulkUpdate: 'PATCH /api/tasks/bulk'
+        }
+      },
+      authentication: 'Bearer token required for protected routes',
+      rateLimits: {
+        general: '100 requests per 15 minutes',
+        login: '5 attempts per 15 minutes',
+        creation: '20 requests per 5 minutes'
       }
     }
   });
@@ -61,11 +92,42 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 
+// Handle 404 errors
+app.all('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.originalUrl} not found`,
+    statusCode: 404
+  });
+});
+
 // Global error handler (must be last)
 app.use(errorHandler);
 
+// Graceful shutdown handler
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received. Shutting down gracefully...');
+  process.exit(0);
+});
+
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`
+╭────────────────────────────────────────────────────────────────────╮
+│     Task Manager API Server                                        │
+├────────────────────────────────────────────────────────────────────┤
+│ Port: ${PORT.toString().padEnd(27)}                                │
+│ Environment: ${(process.env.NODE_ENV || 'development').padEnd(19)} │
+│ Database: MongoDB                                                  │
+│ Security: Enhanced                                                 │
+╰────────────────────────────────────────────────────────────────────╯
+  `);
+  console.log(`🚀 Server running at: http://localhost:${PORT}`);
+  console.log(`📚 API Documentation: http://localhost:${PORT}/api`);
+
 });

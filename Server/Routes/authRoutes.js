@@ -1,22 +1,30 @@
 const express = require('express');
-const { register, login, getMe } = require('../Controller/authController');
-const { protect } = require('../Middleware/authMiddleware');
+const {
+    register,
+    login,
+    logout,
+    getMe,
+    updateProfile,
+    changePassword
+} = require('../Controller/authController');
+const { protect, createRateLimiter } = require('../Middleware/authMiddleware');
 
 const router = express.Router();
 
-// @route   POST /api/auth/register
-// @desc    Register new user
-// @access  Public
-router.post('/register', register);
+// Rate limiting for auth endpoints
+const authRateLimit = createRateLimiter(15 * 60 * 1000, 10); // 10 requests per 15 minutes
+const loginRateLimit = createRateLimiter(15 * 60 * 1000, 5);  // 5 login attempts per 15 minutes
 
-// @route   POST /api/auth/login
-// @desc    Login user
-// @access  Public
-router.post('/login', login);
+// Public routes
+router.post('/register', authRateLimit, register);    // POST /api/auth/register
+router.post('/login', loginRateLimit, login);         // POST /api/auth/login
 
-// @route   GET /api/auth/me
-// @desc    Get current logged in user
-// @access  Private
-router.get('/me', protect, getMe);
+// Protected routes
+router.use(protect); // Apply authentication to all routes below
+
+router.post('/logout', logout);                       // POST /api/auth/logout
+router.get('/me', getMe);                            // GET /api/auth/me
+router.put('/profile', authRateLimit, updateProfile); // PUT /api/auth/profile
+router.put('/password', authRateLimit, changePassword); // PUT /api/auth/password
 
 module.exports = router; 
