@@ -1,24 +1,12 @@
 const Task = require('../Models/task');
-const { validateTaskCreation, validateTaskUpdate, validateTaskQuery } = require('../Utils/validation');
+const { CustomError } = require('../Middleware/errorHandler');
 
 // @desc    Create new task
 // @route   POST /api/tasks
 // @access  Private
 exports.createTask = async (req, res, next) => {
     try {
-        // Validate input
-        const { error } = validateTaskCreation(req.body);
-        if (error) {
-            console.log(error);
-            return res.status(400).json({
-                success: false,
-                message: 'Validation failed',
-                errors: error.details.map(err => err.message),
-                statusCode: 400
-            });
-        }
-
-        // Create task with user reference
+        // Create task with user reference (validation already done by middleware)
         const task = await Task.create({
             ...req.body,
             user: req.user.id
