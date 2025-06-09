@@ -10,6 +10,7 @@ const {
 } = require('../Controller/taskController');
 const { protect, verifyTaskOwnership, createRateLimiter } = require('../Middleware/authMiddleware');
 const { validateUserSession } = require('../Middleware/securityMiddleware');
+const { validationMiddleware } = require('../Middleware/validationMiddleware');
 
 const router = express.Router();
 
@@ -26,8 +27,16 @@ const bulkRateLimit = createRateLimiter(10 * 60 * 1000, 5);     // 5 bulk operat
 
 // Task CRUD routes
 router.route('/')
-    .get(generalRateLimit, getTasks)        // GET /api/tasks - Get all tasks with filtering & pagination
-    .post(createRateLimit, createTask);     // POST /api/tasks - Create new task
+    .get(
+        generalRateLimit,
+        validationMiddleware.validateTaskQuery,
+        getTasks
+    )        // GET /api/tasks - Get all tasks with filtering & pagination
+    .post(
+        createRateLimit,
+        validationMiddleware.validateTaskCreate,
+        createTask
+    );     // POST /api/tasks - Create new task
 
 // Special routes (must be before /:id routes)
 router.get('/stats', generalRateLimit, getTaskStats);           // GET /api/tasks/stats - Get task statistics
@@ -35,8 +44,24 @@ router.patch('/bulk', bulkRateLimit, bulkUpdateTasks);          // PATCH /api/ta
 
 // Individual task routes with ownership verification
 router.route('/:id')
-    .get(generalRateLimit, verifyTaskOwnership, getTask)         // GET /api/tasks/:id - Get single task
-    .put(generalRateLimit, verifyTaskOwnership, updateTask)      // PUT /api/tasks/:id - Update task
-    .delete(generalRateLimit, verifyTaskOwnership, deleteTask);  // DELETE /api/tasks/:id - Delete task (soft delete)
+    .get(
+        generalRateLimit,
+        validationMiddleware.validateMongoId,
+        verifyTaskOwnership,
+        getTask
+    )         // GET /api/tasks/:id - Get single task
+    .put(
+        generalRateLimit,
+        validationMiddleware.validateMongoId,
+        verifyTaskOwnership,
+        validationMiddleware.validateTaskUpdate,
+        updateTask
+    )      // PUT /api/tasks/:id - Update task
+    .delete(
+        generalRateLimit,
+        validationMiddleware.validateMongoId,
+        verifyTaskOwnership,
+        deleteTask
+    );  // DELETE /api/tasks/:id - Delete task (soft delete)
 
 module.exports = router; 

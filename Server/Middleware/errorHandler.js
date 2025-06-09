@@ -3,24 +3,30 @@ const errorHandler = (err, req, res, next) => {
     let error = { ...err };
     error.message = err.message;
 
-    // Log error to console for debugging
-    console.error('Error:', err);
+    // Log error to console for debugging (include stack trace in development)
+    if (process.env.NODE_ENV === 'development') {
+        console.error('Error Stack:', err.stack);
+    } else {
+        console.error('Error:', err.message);
+    }
 
     // Mongoose bad ObjectId
     if (err.name === 'CastError') {
-        const message = 'Resource not found';
         error = {
             statusCode: 404,
-            message
+            message: 'Resource not found',
+            errors: [`Invalid ${err.path}: ${err.value}`]
         };
     }
 
     // Mongoose duplicate key
     if (err.code === 11000) {
-        const message = 'Duplicate field value entered';
+        const field = Object.keys(err.keyValue)[0];
+        const value = err.keyValue[field];
         error = {
             statusCode: 400,
-            message
+            message: 'Duplicate field value entered',
+            errors: [`${field} '${value}' already exists`]
         };
     }
 
@@ -34,29 +40,65 @@ const errorHandler = (err, req, res, next) => {
         };
     }
 
+    // Joi validation error
+    if (err.isJoi) {
+        const errors = err.details.map(detail => detail.message);
+        error = {
+            statusCode: 400,
+            message: 'Validation failed',
+            errors
+        };
+    }
+
     // JWT errors
     if (err.name === 'JsonWebTokenError') {
-        const message = 'Invalid token';
         error = {
             statusCode: 401,
-            message
+            message: 'Invalid token',
+            errors: ['Authentication token is invalid']
         };
     }
 
     if (err.name === 'TokenExpiredError') {
-        const message = 'Token expired';
         error = {
             statusCode: 401,
-            message
+            message: 'Token expired',
+            errors: ['Authentication token has expired']
         };
     }
 
-    res.status(error.statusCode || 500).json({
+    // Custom application errors
+    if (err.name === 'CustomError') {
+        error = {
+            statusCode: err.statusCode || 400,
+            message: err.message,
+            errors: err.errors || []
+        };
+    }
+
+    // Default to 500 server error
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Internal Server Error';
+    const errors = error.errors || [];
+
+    // Send error response in standardized format
+    res.status(statusCode).json({
         success: false,
-        message: error.message || 'Server Error',
-        errors: error.errors || [],
-        statusCode: error.statusCode || 500
+        message,
+        errors,
+        statusCode,
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
     });
 };
 
-module.exports = errorHandler; 
+// Custom error class for application-specific errors
+class CustomError extends Error {
+    constructor(message, statusCode = 400, errors = []) {
+        super(message);
+        this.name = 'CustomError';
+        this.statusCode = statusCode;
+        this.errors = Array.isArray(errors) ? errors : [errors];
+    }
+}
+
+module.exports = { errorHandler, CustomError }; 

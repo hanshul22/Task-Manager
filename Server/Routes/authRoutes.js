@@ -8,6 +8,7 @@ const {
     changePassword
 } = require('../Controller/authController');
 const { protect, createRateLimiter } = require('../Middleware/authMiddleware');
+const { validationMiddleware } = require('../Middleware/validationMiddleware');
 
 const router = express.Router();
 
@@ -15,9 +16,18 @@ const router = express.Router();
 const authRateLimit = createRateLimiter(15 * 60 * 1000, 10); // 10 requests per 15 minutes
 const loginRateLimit = createRateLimiter(15 * 60 * 1000, 5);  // 5 login attempts per 15 minutes
 
-// Public routes
-router.post('/register', authRateLimit, register);    // POST /api/auth/register
-router.post('/login', loginRateLimit, login);         // POST /api/auth/login
+// Public routes with validation
+router.post('/register',
+    authRateLimit,
+    validationMiddleware.validateUserRegister,
+    register
+);    // POST /api/auth/register
+
+router.post('/login',
+    loginRateLimit,
+    validationMiddleware.validateUserLogin,
+    login
+);         // POST /api/auth/login
 
 // Protected routes
 router.use(protect); // Apply authentication to all routes below

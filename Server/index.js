@@ -1,7 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const connectDB = require('./Config/DB');
-const errorHandler = require('./Middleware/errorHandler');
+const { errorHandler } = require('./Middleware/errorHandler');
 const { securityStack } = require('./Middleware/securityMiddleware');
 
 // Load environment variables
@@ -50,6 +50,7 @@ app.get('/', (req, res) => {
     }
   });
 });
+
 
 // API documentation route
 app.get('/api', (req, res) => {
