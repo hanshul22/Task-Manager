@@ -1,5 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./swagger.json');
 const connectDB = require('./Config/DB');
 const { errorHandler } = require('./Middleware/errorHandler');
 const { securityStack } = require('./Middleware/securityMiddleware');
@@ -84,6 +86,10 @@ app.get('/api', (req, res) => {
         general: '100 requests per 15 minutes',
         login: '5 attempts per 15 minutes',
         creation: '20 requests per 5 minutes'
+      },
+      documentation: {
+        swagger: `${req.protocol}://${req.get('host')}/api/docs`,
+        postman: 'Available in repository'
       }
     }
   });
@@ -92,6 +98,20 @@ app.get('/api', (req, res) => {
 // Mount routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
+
+// Swagger Documentation
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: "Task Manager API Documentation",
+  swaggerOptions: {
+    persistAuthorization: true,
+    displayRequestDuration: true,
+    docExpansion: 'none',
+    filter: true,
+    showRequestHeaders: true,
+    tryItOutEnabled: true
+  }
+}));
 
 // Handle 404 errors
 app.all('*', (req, res) => {
@@ -130,5 +150,6 @@ app.listen(PORT, () => {
   `);
   console.log(`🚀 Server running at: http://localhost:${PORT}`);
   console.log(`📚 API Documentation: http://localhost:${PORT}/api`);
+  console.log(`📖 Swagger UI: http://localhost:${PORT}/api/docs`);
 
 });
