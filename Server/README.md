@@ -219,5 +219,3 @@ Server/
 This project is licensed under the ISC License.
 
 ---
-
-**Note**: Make sure to replace the JWT_SECRET in production with a strong, unique secret key.
