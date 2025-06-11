@@ -281,7 +281,7 @@ exports.changePassword = async (req, res, next) => {
 
         // Update password
         user.password = newPassword;
-        await user.save();
+        await user.save()
 
         res.status(200).json({
             success: true,
