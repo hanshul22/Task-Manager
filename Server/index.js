@@ -36,6 +36,7 @@ app.use(express.urlencoded({
 // Import routes
 const authRoutes = require('./Routes/authRoutes');
 const taskRoutes = require('./Routes/taskRoutes');
+const tagRoutes = require('./Routes/tagRoutes');
 
 // Health check route
 app.get('/', (req, res) => {
@@ -98,6 +99,7 @@ app.get('/api', (req, res) => {
 // Mount routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/tags', tagRoutes);
 
 // Swagger Documentation
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {

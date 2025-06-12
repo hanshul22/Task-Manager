@@ -28,6 +28,13 @@ const validateUserRegistration = (data) => {
                 'string.empty': 'Password is required',
                 'string.min': 'Password must be at least 6 characters long',
                 'any.required': 'Password is required'
+            }),
+        confirmPassword: Joi.string()
+            .valid(Joi.ref('password'))
+            .required()
+            .messages({
+                'any.only': 'Password confirmation does not match password',
+                'any.required': 'Password confirmation is required'
             })
     });
 

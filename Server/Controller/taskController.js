@@ -1,5 +1,7 @@
 const Task = require('../Models/task');
 const { CustomError } = require('../Middleware/errorHandler');
+const { validationSchemas } = require('../Middleware/validationMiddleware');
+const notificationService = require('../services/notificationService');
 
 // @desc    Create new task
 // @route   POST /api/tasks
@@ -11,6 +13,11 @@ exports.createTask = async (req, res, next) => {
             ...req.body,
             user: req.user.id
         });
+
+        // Schedule task reminder if it has due date
+        if (task.dueDate) {
+            notificationService.scheduleTaskReminder(task);
+        }
 
         // Success response
         res.status(201).json({
@@ -29,8 +36,7 @@ exports.createTask = async (req, res, next) => {
 exports.getTasks = async (req, res, next) => {
     try {
         // Validate query parameters
-        const { error } = validateTaskQuery(req.query);
-        console.log(error);
+        const { error } = validationSchemas.taskQuery.validate(req.query);
         if (error) {
             return res.status(400).json({
                 success: false,
@@ -154,7 +160,7 @@ exports.getTask = async (req, res, next) => {
 exports.updateTask = async (req, res, next) => {
     try {
         // Validate input
-        const { error } = validateTaskUpdate(req.body);
+        const { error } = validationSchemas.taskUpdate.validate(req.body);
         if (error) {
             return res.status(400).json({
                 success: false,
@@ -187,6 +193,13 @@ exports.updateTask = async (req, res, next) => {
                 runValidators: true
             }
         ).populate('user', 'name email');
+
+        // Handle task status changes for notifications
+        if (req.body.status === 'completed') {
+            notificationService.cancelTaskReminder(task._id);
+        } else if (req.body.dueDate && (req.body.status === 'pending' || req.body.status === 'in-progress')) {
+            notificationService.scheduleTaskReminder(task);
+        }
 
         res.status(200).json({
             success: true,
@@ -230,6 +243,9 @@ exports.deleteTask = async (req, res, next) => {
             isDeleted: true,
             deletedAt: new Date()
         });
+
+        // Cancel any scheduled reminders
+        notificationService.cancelTaskReminder(req.params.id);
 
         res.status(200).json({
             success: true,
@@ -323,7 +339,7 @@ exports.bulkUpdateTasks = async (req, res, next) => {
         }
 
         // Validate update data
-        const { error } = validateTaskUpdate(updateData);
+        const { error } = validationSchemas.taskUpdate.validate(updateData);
         if (error) {
             return res.status(400).json({
                 success: false,
