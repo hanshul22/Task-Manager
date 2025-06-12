@@ -39,6 +39,11 @@ router.route('/')
     );     // POST /api/tasks - Create new task
 
 // Special routes (must be before /:id routes)
+router.get('/search',
+    generalRateLimit,
+    validationMiddleware.validateTaskQuery,
+    getTasks
+);           // GET /api/tasks/search - Search tasks (same as GET /api/tasks but separate endpoint)
 router.get('/stats', generalRateLimit, getTaskStats);           // GET /api/tasks/stats - Get task statistics
 router.patch('/bulk', bulkRateLimit, bulkUpdateTasks);          // PATCH /api/tasks/bulk - Bulk update tasks
 

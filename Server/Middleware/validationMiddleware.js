@@ -284,6 +284,100 @@ const validationSchemas = {
             .messages({
                 'string.pattern.base': 'Invalid ID format'
             })
+    }),
+
+    // Tag Management Schemas
+    tagCreate: Joi.object({
+        name: Joi.string()
+            .trim()
+            .min(1)
+            .max(30)
+            .required()
+            .messages({
+                'string.min': 'Tag name cannot be empty',
+                'string.max': 'Tag name cannot exceed 30 characters'
+            }),
+        description: Joi.string()
+            .trim()
+            .max(200)
+            .allow('')
+            .optional()
+            .messages({
+                'string.max': 'Tag description cannot exceed 200 characters'
+            }),
+        color: Joi.string()
+            .pattern(/^#[0-9A-F]{6}$/i)
+            .default('#007bff')
+            .optional()
+            .messages({
+                'string.pattern.base': 'Color must be a valid hex color code (e.g., #FF0000)'
+            })
+    }),
+
+    tagUpdate: Joi.object({
+        name: Joi.string()
+            .trim()
+            .min(1)
+            .max(30)
+            .optional()
+            .messages({
+                'string.min': 'Tag name cannot be empty',
+                'string.max': 'Tag name cannot exceed 30 characters'
+            }),
+        description: Joi.string()
+            .trim()
+            .max(200)
+            .allow('')
+            .optional()
+            .messages({
+                'string.max': 'Tag description cannot exceed 200 characters'
+            }),
+        color: Joi.string()
+            .pattern(/^#[0-9A-F]{6}$/i)
+            .optional()
+            .messages({
+                'string.pattern.base': 'Color must be a valid hex color code (e.g., #FF0000)'
+            })
+    }).min(1).messages({
+        'object.min': 'At least one field must be provided for update'
+    }),
+
+    tagQuery: Joi.object({
+        page: Joi.number()
+            .integer()
+            .min(1)
+            .default(1)
+            .messages({
+                'number.min': 'Page number must be at least 1'
+            }),
+        limit: Joi.number()
+            .integer()
+            .min(1)
+            .max(100)
+            .default(50)
+            .messages({
+                'number.min': 'Limit must be at least 1',
+                'number.max': 'Limit cannot exceed 100'
+            }),
+        search: Joi.string()
+            .trim()
+            .max(100)
+            .optional()
+            .messages({
+                'string.max': 'Search term cannot exceed 100 characters'
+            }),
+        sortBy: Joi.string()
+            .valid('createdAt', 'updatedAt', 'name', 'usageCount')
+            .default('createdAt')
+            .messages({
+                'any.only': 'Sort field must be one of: createdAt, updatedAt, name, usageCount'
+            }),
+        sortOrder: Joi.string()
+            .valid('asc', 'desc')
+            .default('desc')
+            .messages({
+                'any.only': 'Sort order must be either asc or desc'
+            })
     })
 };
 
@@ -299,6 +393,11 @@ const validationMiddleware = {
     validateTaskCreate: validate(validationSchemas.taskCreate),
     validateTaskUpdate: validate(validationSchemas.taskUpdate),
     validateTaskQuery: validate(validationSchemas.taskQuery, 'query'),
+
+    // Tag validations
+    validateTagCreate: validate(validationSchemas.tagCreate),
+    validateTagUpdate: validate(validationSchemas.tagUpdate),
+    validateTagQuery: validate(validationSchemas.tagQuery, 'query'),
 
     // Parameter validations
     validateMongoId: validate(validationSchemas.mongoId, 'params')

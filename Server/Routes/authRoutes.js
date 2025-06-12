@@ -5,7 +5,9 @@ const {
     logout,
     getMe,
     updateProfile,
-    changePassword
+    changePassword,
+    forgotPassword,
+    resetPassword
 } = require('../Controller/authController');
 const { protect, createRateLimiter } = require('../Middleware/authMiddleware');
 const { validationMiddleware } = require('../Middleware/validationMiddleware');
@@ -28,6 +30,17 @@ router.post('/login',
     validationMiddleware.validateUserLogin,
     login
 );         // POST /api/auth/login
+
+// Password reset routes (public)
+router.post('/forgot-password',
+    authRateLimit,
+    forgotPassword
+); // POST /api/auth/forgot-password
+
+router.post('/reset-password',
+    authRateLimit,
+    resetPassword
+);  // POST /api/auth/reset-password
 
 // Protected routes
 router.use(protect); // Apply authentication to all routes below
