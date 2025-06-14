@@ -2,9 +2,9 @@ const express = require('express');
 const dotenv = require('dotenv');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
-const connectDB = require('./Config/DB');
-const { errorHandler } = require('./Middleware/errorHandler');
-const { securityStack } = require('./Middleware/securityMiddleware');
+const connectDB = require('./config/DB');
+const { errorHandler } = require('./middleware/errorHandler');
+const { securityStack } = require('./middleware/securityMiddleware');
 
 // Load environment variables
 dotenv.config();
@@ -34,9 +34,9 @@ app.use(express.urlencoded({
 }));
 
 // Import routes
-const authRoutes = require('./Routes/authRoutes');
-const taskRoutes = require('./Routes/taskRoutes');
-const tagRoutes = require('./Routes/tagRoutes');
+const authRoutes = require('./routes/authRoutes');
+const taskRoutes = require('./routes/taskRoutes');
+const tagRoutes = require('./routes/tagRoutes');
 
 // Health check route
 app.get('/', (req, res) => {
