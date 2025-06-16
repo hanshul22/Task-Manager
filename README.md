@@ -91,9 +91,6 @@ npm run dev
 
 # Production mode
 npm start
-
-# Test mode
-npm test
 ```
 
 ## 📚 API Endpoints
@@ -348,22 +345,6 @@ task-manager-api/
 - **XSS Protection** - Input sanitization
 - **Data Encryption** - Sensitive data encryption
 
-## 🧪 Testing
-
-### Run Tests
-```bash
-# Run all tests
-npm test
-
-# Run specific test suite
-npm test -- --grep "Authentication"
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run tests in watch mode
-npm run test:watch
-```
 
 ### Testing with Postman
 1. Import the Postman collection from `/docs/postman-collection.json`
@@ -509,11 +490,7 @@ docs(api): update swagger documentation
 - **Live API**: [https://task-manager-mckp.onrender.com](https://task-manager-mckp.onrender.com)
 - **API Documentation**: [https://task-manager-mckp.onrender.com/api/docs](https://task-manager-mckp.onrender.com/api/docs)
 
-
-### Resources
-- **GitHub Repository**: [Link to repository]
-- **Postman Collection**: [Link to collection]
-- **Demo Video**: [Link to demo]
+- **Demo Video**: [https://drive.google.com/drive/folders/1vqVCyAPlYlADs1EjrtVWCTd65r4TWD_0?usp=sharing]
 
 ## Links 
 
